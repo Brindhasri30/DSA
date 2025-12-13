@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Exam Stress Humor Bot</title>
+</head>
+<body>
+  <h1>Exam Stress Humor Bot 🤣📚</h1>
+
+  <input id="msg" placeholder="Tell your exam problem..." />
+  <button onclick="reply()">Send</button>
+
+  <p id="bot"></p>
+
+  <script>
+    const replies = [
+      "Your preparation is so silent, even you can’t hear it.",
+      "Relax. Exams come and go. Your trauma will stay forever.",
+      "Your brain is buffering... please wait.",
+      "Sleep well. That’s the only thing going well in your life.",
+      "Don’t panic. You’ll fail gracefully.",
+      "Study now or cry later — choose wisely."
+    ];
+
+    function reply() {
+      let r = Math.floor(Math.random() * replies.length);
+      document.getElementById("bot").innerText = replies[r];
+    }
+  </script>
+</body>
+</html>

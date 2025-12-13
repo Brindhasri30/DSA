@@ -1,0 +1,1881 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Exam Stress Humor Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f4ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      width: 380px;
+      background: white;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #4f46e5;
+      color: white;
+      padding: 10px 16px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .moods {
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid #eee;
+    }
+    .mood-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 20px;
+      border: 1px solid #4f46e5;
+      background: white;
+      cursor: pointer;
+    }
+    .mood-btn.active {
+      background: #4f46e5;
+      color: white;
+    }
+    .chat {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f9fafb;
+    }
+    .msg {
+      margin: 6px 0;
+      max-width: 80%;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .bot {
+      background: #e5e7eb;
+      align-self: flex-start;
+    }
+    .user {
+      background: #4f46e5;
+      color: white;
+      align-self: flex-end;
+    }
+    .input-area {
+      display: flex;
+      padding: 8px;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+    .input-area input {
+      flex: 1;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .input-area button {
+      margin-left: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Exam Stress Humor Bot</h2>
+      <small>Clean jokes + small study nudges</small>
+    </div>
+
+    <div class="moods">
+      <button class="mood-btn active" data-mood="stressed">Stressed</button>
+      <button class="mood-btn" data-mood="sleepy">Sleepy</button>
+      <button class="mood-btn" data-mood="procrastinating">Procrastinating</button>
+      <button class="mood-btn" data-mood="ok">Feeling okay</button>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type how you feel..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const moodButtons = document.querySelectorAll('.mood-btn');
+
+    let currentMood = 'stressed';
+
+    const riskyKeywords = ["give up", "end it", "hate my life", "suicide", "die"];
+
+    const humorMessages = [
+      {
+        moodTags: ["stressed"],
+        type: "joke",
+        text: "Exams again? It’s not a test, it’s just the universe checking if you were really listening.",
+        action: "Pick any one topic and study it for just 10 minutes."
+      },
+      {
+        moodTags: ["stressed"],
+        type: "motivation",
+        text: "Your brain knows more than you think, it’s just shy during exams.",
+        action: "Write down 5 bullet points from memory, then check your notes."
+      },
+      {
+        moodTags: ["sleepy"],
+        type: "joke",
+        text: "You’re not sleepy, you’re just on low‑battery mode without charger.",
+        action: "Wash your face, drink water, and revise 3 short questions."
+      },
+      {
+        moodTags: ["procrastinating"],
+        type: "roast",
+        text: "Your commitment to not opening the book could win an award.",
+        action: "Set a 10‑minute timer and read any page, no overthinking."
+      },
+      {
+        moodTags: ["ok"],
+        type: "joke",
+        text: "Look at you, surviving exams like it’s a side quest.",
+        action: "Do 5 MCQs now to keep the streak alive."
+      }
+    ];
+
+    function addMessage(text, fromBot = true) {
+      const div = document.createElement('div');
+      div.classList.add('msg');
+      div.classList.add(fromBot ? 'bot' : 'user');
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function getSupportMessage() {
+      return {
+        text: "Hey, this sounds serious. Marks are important, but your life and health are much more important.",
+        action: "Please talk to a trusted friend, family member, teacher, or counselor as soon as you can."
+      };
+    }
+
+    function isRisky(text) {
+      const lower = text.toLowerCase();
+      return riskyKeywords.some(k => lower.includes(k));
+    }
+
+    function getRandomForMood(mood) {
+      const filtered = humorMessages.filter(m => m.moodTags.includes(mood));
+      if (filtered.length === 0) return null;
+      const index = Math.floor(Math.random() * filtered.length);
+      return filtered[index];
+    }
+
+    function handleUserMessage(text) {
+      if (isRisky(text)) {
+        const s = getSupportMessage();
+        addMessage(s.text + " Action: " + s.action, true);
+        return;
+      }
+
+      const m = getRandomForMood(currentMood);
+      if (m) {
+        addMessage(m.text + " Try this: " + m.action, true);
+      } else {
+        addMessage("I ran out of exam jokes, but you’ve still got this. Study a little, then rest.", true);
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const text = userInput.value.trim();
+      if (!text) return;
+      addMessage(text, false);
+      handleUserMessage(text);
+      userInput.value = '';
+    });
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendBtn.click();
+      }
+    });
+
+    moodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        moodButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMood = btn.dataset.mood;
+        addMessage(`Mood changed to "${currentMood}". Tell me what’s going on.`, true);
+      });
+    });
+
+    // initial greeting
+    addMessage("Hi! I’m your Exam Stress Humor Bot. Choose a mood above and tell me how you feel.", true);
+  </script>
+</body>
+</html> -->
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Exam Stress Humor Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f4ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      width: 380px;
+      background: white;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #4f46e5;
+      color: white;
+      padding: 10px 16px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .moods {
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid #eee;
+    }
+    .mood-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 20px;
+      border: 1px solid #4f46e5;
+      background: white;
+      cursor: pointer;
+    }
+    .mood-btn.active {
+      background: #4f46e5;
+      color: white;
+    }
+    .chat {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f9fafb;
+      display: flex;
+      flex-direction: column;
+    }
+    .msg {
+      margin: 6px 0;
+      max-width: 80%;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .bot {
+      background: #e5e7eb;
+      align-self: flex-start;
+    }
+    .user {
+      background: #4f46e5;
+      color: white;
+      align-self: flex-end;
+    }
+    .input-area {
+      display: flex;
+      padding: 8px;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+    .input-area input {
+      flex: 1;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .input-area button {
+      margin-left: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Exam Stress Humor Bot</h2>
+      <small>Clean jokes + polite roasts + small study nudges</small>
+    </div>
+
+    <div class="moods">
+      <button class="mood-btn active" data-mood="stressed">Stressed</button>
+      <button class="mood-btn" data-mood="sleepy">Sleepy</button>
+      <button class="mood-btn" data-mood="procrastinating">Procrastinating</button>
+      <button class="mood-btn" data-mood="ok">Feeling okay</button>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type how you feel..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const moodButtons = document.querySelectorAll('.mood-btn');
+
+    let currentMood = 'stressed';
+
+    // words where bot stops jokes and becomes serious
+    const riskyKeywords = ["give up", "end it", "hate my life", "suicide", "die"];
+
+    // humor (soft jokes + motivation)
+    const humorMessages = [
+      {
+        moodTags: ["stressed"],
+        type: "joke",
+        text: "Exams again? It feels like the question paper has a personal crush on you.",
+        action: "Pick one easy topic and study it for just 10 minutes."
+      },
+      {
+        moodTags: ["stressed"],
+        type: "motivation",
+        text: "Your brain knows more than it shows; it just gets stage fright during exams.",
+        action: "Write down 5 bullet points from memory, then check your notes."
+      },
+      {
+        moodTags: ["sleepy"],
+        type: "joke",
+        text: "You’re not sleepy, you’re just switching to power‑saving mode.",
+        action: "Wash your face, drink water, and revise 3 short questions."
+      },
+      {
+        moodTags: ["ok"],
+        type: "joke",
+        text: "Look at you, treating exams like side quests instead of final boss fights.",
+        action: "Do 5 MCQs now to keep the streak going."
+      }
+    ];
+
+    // polite roasts (behavior‑based, not personal attacks)
+    const roastMessages = [
+      {
+        moodTags: ["procrastinating"],
+        type: "roast",
+        text: "Your bond with your phone is strong; your bond with your notes is… buffering.",
+        action: "Put the phone away for 10 minutes and read any one page."
+      },
+      {
+        moodTags: ["procrastinating"],
+        type: "roast",
+        text: "You and your syllabus have a long‑distance relationship: you only meet the night before exams.",
+        action: "Choose one small topic and introduce yourself properly to it."
+      },
+      {
+        moodTags: ["procrastinating"],
+        type: "roast",
+        text: "The way you postpone studying could be used as a case study in advanced delay techniques.",
+        action: "Set a 10‑minute timer and study without judging yourself."
+      }
+    ];
+
+    function addMessage(text, fromBot = true) {
+      const div = document.createElement('div');
+      div.classList.add('msg');
+      div.classList.add(fromBot ? 'bot' : 'user');
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function getSupportMessage() {
+      return {
+        text: "Hey, this sounds serious. Marks are important, but your life and health matter much more.",
+        action: "Please talk to a trusted friend, family member, teacher, or counselor as soon as you can."
+      };
+    }
+
+    function isRisky(text) {
+      const lower = text.toLowerCase();
+      return riskyKeywords.some(k => lower.includes(k));
+    }
+
+    function getRandomFrom(list, mood) {
+      const filtered = list.filter(m => m.moodTags.includes(mood));
+      if (filtered.length === 0) return null;
+      const index = Math.floor(Math.random() * filtered.length);
+      return filtered[index];
+    }
+
+    function getRandomResponse(mood) {
+      // for procrastinating, sometimes prefer polite roast
+      if (mood === "procrastinating") {
+        // 60% chance roast, 40% humor
+        const useRoast = Math.random() < 0.6;
+        if (useRoast) {
+          const r = getRandomFrom(roastMessages, mood);
+          if (r) return r;
+        }
+      }
+      // fallback to humor list
+      return getRandomFrom(humorMessages, mood);
+    }
+
+    function handleUserMessage(text) {
+      if (isRisky(text)) {
+        const s = getSupportMessage();
+        addMessage(s.text + " Action: " + s.action, true);
+        return;
+      }
+
+      const m = getRandomResponse(currentMood);
+      if (m) {
+        addMessage(m.text + " Try this: " + m.action, true);
+      } else {
+        addMessage("I ran out of lines, but you haven’t run out of chances. Study a little, then rest.", true);
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const text = userInput.value.trim();
+      if (!text) return;
+      addMessage(text, false);
+      handleUserMessage(text);
+      userInput.value = '';
+    });
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendBtn.click();
+      }
+    });
+
+    moodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        moodButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMood = btn.dataset.mood;
+        addMessage(`Mood changed to "${currentMood}". Tell me what’s going on.`, true);
+      });
+    });
+
+    // initial greeting
+    addMessage("Hi! I’m your Exam Stress Humor Bot. Choose a mood and type how you feel. I’ll reply with jokes, polite roasts, and small study nudges.", true);
+  </script>
+</body>
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Exam Roast Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f4ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      width: 380px;
+      background: white;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #4f46e5;
+      color: white;
+      padding: 10px 16px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .header small {
+      opacity: 0.9;
+      font-size: 11px;
+    }
+    .moods {
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid #eee;
+    }
+    .mood-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 20px;
+      border: 1px solid #4f46e5;
+      background: white;
+      cursor: pointer;
+    }
+    .mood-btn.active {
+      background: #4f46e5;
+      color: white;
+    }
+    .chat {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f9fafb;
+      display: flex;
+      flex-direction: column;
+    }
+    .msg {
+      margin: 6px 0;
+      max-width: 80%;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .bot {
+      background: #e5e7eb;
+      align-self: flex-start;
+    }
+    .user {
+      background: #4f46e5;
+      color: white;
+      align-self: flex-end;
+    }
+    .input-area {
+      display: flex;
+      padding: 8px;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+    .input-area input {
+      flex: 1;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .input-area button {
+      margin-left: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Exam Roast Bot</h2>
+      <small>Polite insults about your study habits</small>
+    </div>
+
+    <div class="moods">
+      <button class="mood-btn active" data-mood="stressed">Stressed</button>
+      <button class="mood-btn" data-mood="sleepy">Sleepy</button>
+      <button class="mood-btn" data-mood="procrastinating">Procrastinating</button>
+      <button class="mood-btn" data-mood="ok">Feeling okay</button>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type anything, get roasted..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const moodButtons = document.querySelectorAll('.mood-btn');
+
+    let currentMood = 'stressed';
+
+    // If these appear, bot stops roasting and becomes serious
+    const riskyKeywords = ["give up", "end it", "hate my life", "suicide", "die"];
+
+    // Main roast list – all polite, behavior‑based
+    const roastMessages = [
+      // STRESSED
+      {
+        moodTags: ["stressed"],
+        text: "You’re acting like the exam is a horror movie, but half the ghosts are just definitions.",
+        action: "At least read one definition so the ghosts have names."
+      },
+      {
+        moodTags: ["stressed"],
+        text: "You look like you’ve revised every possible panic scenario except the syllabus.",
+        action: "Glance at a single page instead of replaying disasters in your head."
+      },
+      {
+        moodTags: ["stressed"],
+        text: "If overthinking was a subject, you’d top the class without studying.",
+        action: "Use that brain power to read two lines of your notes, maybe?"
+      },
+
+      // SLEEPY
+      {
+        moodTags: ["sleepy"],
+        text: "You’re not revising; you’re doing advanced eyelid inspection.",
+        action: "Let your eyes look at one paragraph before they close again."
+      },
+      {
+        moodTags: ["sleepy"],
+        text: "Your brain is on airplane mode, but you’re still expecting full marks.",
+        action: "Switch it to normal mode by reading at least one small concept."
+      },
+      {
+        moodTags: ["sleepy"],
+        text: "You’re one yawn away from forgetting why you opened the book.",
+        action: "Find one heading and pretend to care about it for a minute."
+      },
+
+      // PROCRASTINATING
+      {
+        moodTags: ["procrastinating"],
+        text: "Your bond with your phone is strong; your bond with your notes is… buffering.",
+        action: "Pause the buffer long enough to open the book once."
+      },
+      {
+        moodTags: ["procrastinating"],
+        text: "You and your syllabus have a long‑distance relationship: you only meet the night before exams.",
+        action: "Maybe send it a message now by reading a single page."
+      },
+      {
+        moodTags: ["procrastinating"],
+        text: "The way you postpone studying could be taught as an advanced delay technique.",
+        action: "Delay your scrolling instead and stare at one formula."
+      },
+      {
+        moodTags: ["procrastinating"],
+        text: "Your to‑do list has seen more carry‑forwards than your answer sheets.",
+        action: "Let one small topic graduate from ‘pending’ to ‘kind of done’."
+      },
+
+      // OK / CHILL
+      {
+        moodTags: ["ok"],
+        text: "You’re taking this exam so casually, the questions might feel offended.",
+        action: "Solve at least one question so they don’t feel ignored."
+      },
+      {
+        moodTags: ["ok"],
+        text: "You’re treating the exam like a side quest, but it thinks it’s the final boss.",
+        action: "Give it one tiny hit by revising a short topic."
+      },
+      {
+        moodTags: ["ok"],
+        text: "Confidence is good, but your notes are still wondering who you are.",
+        action: "Visit them briefly so they remember your face."
+      }
+    ];
+
+    function addMessage(text, fromBot = true) {
+      const div = document.createElement('div');
+      div.classList.add('msg');
+      div.classList.add(fromBot ? 'bot' : 'user');
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function getSupportMessage() {
+      return {
+        text: "This sounds serious. Exams are temporary; your life and health matter much more.",
+        action: "Please talk to a trusted friend, family member, teacher, or counselor as soon as you can."
+      };
+    }
+
+    function isRisky(text) {
+      const lower = text.toLowerCase();
+      return riskyKeywords.some(k => lower.includes(k));
+    }
+
+    function getRandomRoast(mood) {
+      const filtered = roastMessages.filter(m => m.moodTags.includes(mood));
+      if (filtered.length === 0) return null;
+      const index = Math.floor(Math.random() * filtered.length);
+      return filtered[index];
+    }
+
+    function handleUserMessage(text) {
+      if (isRisky(text)) {
+        const s = getSupportMessage();
+        addMessage(s.text + " Action: " + s.action, true);
+        return;
+      }
+
+      const r = getRandomRoast(currentMood) || getRandomRoast("stressed");
+      if (r) {
+        // Action is written like part of the insult, not serious advice
+        addMessage(r.text + " " + r.action, true);
+      } else {
+        addMessage("I ran out of roasts, but your excuses are still in stock.", true);
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const text = userInput.value.trim();
+      if (!text) return;
+      addMessage(text, false);
+      handleUserMessage(text);
+      userInput.value = '';
+    });
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendBtn.click();
+      }
+    });
+
+    moodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        moodButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMood = btn.dataset.mood;
+        addMessage(`Mood set to "${currentMood}". Ready for a fresh roast.`, true);
+      });
+    });
+
+    // Initial greeting
+    addMessage("Hi! I’m your Exam Roast Bot. Choose a mood and type anything. I’ll politely bully your study habits.", true);
+  </script>
+</body>
+</html> -->
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Exam Stress Humor Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f4ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      width: 380px;
+      background: white;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #4f46e5;
+      color: white;
+      padding: 10px 16px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .moods {
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid #eee;
+    }
+    .mood-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 20px;
+      border: 1px solid #4f46e5;
+      background: white;
+      cursor: pointer;
+    }
+    .mood-btn.active {
+      background: #4f46e5;
+      color: white;
+    }
+    .chat {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f9fafb;
+    }
+    .msg {
+      margin: 6px 0;
+      max-width: 80%;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .bot {
+      background: #e5e7eb;
+      align-self: flex-start;
+    }
+    .user {
+      background: #4f46e5;
+      color: white;
+      align-self: flex-end;
+    }
+    .input-area {
+      display: flex;
+      padding: 8px;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+    .input-area input {
+      flex: 1;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .input-area button {
+      margin-left: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Exam Stress Humor Bot</h2>
+      <small>Clean jokes + small study nudges</small>
+    </div>
+
+    <div class="moods">
+      <button class="mood-btn active" data-mood="stressed">Stressed</button>
+      <button class="mood-btn" data-mood="sleepy">Sleepy</button>
+      <button class="mood-btn" data-mood="procrastinating">Procrastinating</button>
+      <button class="mood-btn" data-mood="ok">Feeling okay</button>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type how you feel..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const moodButtons = document.querySelectorAll('.mood-btn');
+
+    let currentMood = 'stressed';
+
+    const riskyKeywords = ["give up", "end it", "hate my life", "suicide", "die"];
+
+    const humorMessages = [
+      {
+        moodTags: ["stressed"],
+        type: "joke",
+        text: "Exams again? It’s not a test, it’s just the universe checking if you were really listening.",
+        action: "Pick any one topic and study it for just 10 minutes."
+      },
+      {
+        moodTags: ["stressed"],
+        type: "motivation",
+        text: "Your brain knows more than you think, it’s just shy during exams.",
+        action: "Write down 5 bullet points from memory, then check your notes."
+      },
+      {
+        moodTags: ["sleepy"],
+        type: "joke",
+        text: "You’re not sleepy, you’re just on low‑battery mode without charger.",
+        action: "Wash your face, drink water, and revise 3 short questions."
+      },
+      {
+        moodTags: ["procrastinating"],
+        type: "roast",
+        text: "Your commitment to not opening the book could win an award.",
+        action: "Set a 10‑minute timer and read any page, no overthinking."
+      },
+      {
+        moodTags: ["ok"],
+        type: "joke",
+        text: "Look at you, surviving exams like it’s a side quest.",
+        action: "Do 5 MCQs now to keep the streak alive."
+      }
+    ];
+
+    function addMessage(text, fromBot = true) {
+      const div = document.createElement('div');
+      div.classList.add('msg');
+      div.classList.add(fromBot ? 'bot' : 'user');
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function getSupportMessage() {
+      return {
+        text: "Hey, this sounds serious. Marks are important, but your life and health are much more important.",
+        action: "Please talk to a trusted friend, family member, teacher, or counselor as soon as you can."
+      };
+    }
+
+    function isRisky(text) {
+      const lower = text.toLowerCase();
+      return riskyKeywords.some(k => lower.includes(k));
+    }
+
+    function getRandomForMood(mood) {
+      const filtered = humorMessages.filter(m => m.moodTags.includes(mood));
+      if (filtered.length === 0) return null;
+      const index = Math.floor(Math.random() * filtered.length);
+      return filtered[index];
+    }
+
+    function handleUserMessage(text) {
+      if (isRisky(text)) {
+        const s = getSupportMessage();
+        addMessage(s.text + " Action: " + s.action, true);
+        return;
+      }
+
+      const m = getRandomForMood(currentMood);
+      if (m) {
+        addMessage(m.text + " Try this: " + m.action, true);
+      } else {
+        addMessage("I ran out of exam jokes, but you’ve still got this. Study a little, then rest.", true);
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const text = userInput.value.trim();
+      if (!text) return;
+      addMessage(text, false);
+      handleUserMessage(text);
+      userInput.value = '';
+    });
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendBtn.click();
+      }
+    });
+
+    moodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        moodButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMood = btn.dataset.mood;
+        addMessage(`Mood changed to "${currentMood}". Tell me what’s going on.`, true);
+      });
+    });
+
+    // initial greeting
+    addMessage("Hi! I’m your Exam Stress Humor Bot. Choose a mood above and tell me how you feel.", true);
+  </script>
+</body>
+</html> -->
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Exam Stress Humor Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f4ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      width: 380px;
+      background: white;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #4f46e5;
+      color: white;
+      padding: 10px 16px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .moods {
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid #eee;
+    }
+    .mood-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 20px;
+      border: 1px solid #4f46e5;
+      background: white;
+      cursor: pointer;
+    }
+    .mood-btn.active {
+      background: #4f46e5;
+      color: white;
+    }
+    .chat {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f9fafb;
+      display: flex;
+      flex-direction: column;
+    }
+    .msg {
+      margin: 6px 0;
+      max-width: 80%;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .bot {
+      background: #e5e7eb;
+      align-self: flex-start;
+    }
+    .user {
+      background: #4f46e5;
+      color: white;
+      align-self: flex-end;
+    }
+    .input-area {
+      display: flex;
+      padding: 8px;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+    .input-area input {
+      flex: 1;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .input-area button {
+      margin-left: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Exam Stress Humor Bot</h2>
+      <small>Clean jokes + polite roasts + small study nudges</small>
+    </div>
+
+    <div class="moods">
+      <button class="mood-btn active" data-mood="stressed">Stressed</button>
+      <button class="mood-btn" data-mood="sleepy">Sleepy</button>
+      <button class="mood-btn" data-mood="procrastinating">Procrastinating</button>
+      <button class="mood-btn" data-mood="ok">Feeling okay</button>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type how you feel..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const moodButtons = document.querySelectorAll('.mood-btn');
+
+    let currentMood = 'stressed';
+
+    // words where bot stops jokes and becomes serious
+    const riskyKeywords = ["give up", "end it", "hate my life", "suicide", "die"];
+
+    // humor (soft jokes + motivation)
+    const humorMessages = [
+      {
+        moodTags: ["stressed"],
+        type: "joke",
+        text: "Exams again? It feels like the question paper has a personal crush on you.",
+        action: "Pick one easy topic and study it for just 10 minutes."
+      },
+      {
+        moodTags: ["stressed"],
+        type: "motivation",
+        text: "Your brain knows more than it shows; it just gets stage fright during exams.",
+        action: "Write down 5 bullet points from memory, then check your notes."
+      },
+      {
+        moodTags: ["sleepy"],
+        type: "joke",
+        text: "You’re not sleepy, you’re just switching to power‑saving mode.",
+        action: "Wash your face, drink water, and revise 3 short questions."
+      },
+      {
+        moodTags: ["ok"],
+        type: "joke",
+        text: "Look at you, treating exams like side quests instead of final boss fights.",
+        action: "Do 5 MCQs now to keep the streak going."
+      }
+    ];
+
+    // polite roasts (behavior‑based, not personal attacks)
+    const roastMessages = [
+      {
+        moodTags: ["procrastinating"],
+        type: "roast",
+        text: "Your bond with your phone is strong; your bond with your notes is… buffering.",
+        action: "Put the phone away for 10 minutes and read any one page."
+      },
+      {
+        moodTags: ["procrastinating"],
+        type: "roast",
+        text: "You and your syllabus have a long‑distance relationship: you only meet the night before exams.",
+        action: "Choose one small topic and introduce yourself properly to it."
+      },
+      {
+        moodTags: ["procrastinating"],
+        type: "roast",
+        text: "The way you postpone studying could be used as a case study in advanced delay techniques.",
+        action: "Set a 10‑minute timer and study without judging yourself."
+      }
+    ];
+
+    function addMessage(text, fromBot = true) {
+      const div = document.createElement('div');
+      div.classList.add('msg');
+      div.classList.add(fromBot ? 'bot' : 'user');
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function getSupportMessage() {
+      return {
+        text: "Hey, this sounds serious. Marks are important, but your life and health matter much more.",
+        action: "Please talk to a trusted friend, family member, teacher, or counselor as soon as you can."
+      };
+    }
+
+    function isRisky(text) {
+      const lower = text.toLowerCase();
+      return riskyKeywords.some(k => lower.includes(k));
+    }
+
+    function getRandomFrom(list, mood) {
+      const filtered = list.filter(m => m.moodTags.includes(mood));
+      if (filtered.length === 0) return null;
+      const index = Math.floor(Math.random() * filtered.length);
+      return filtered[index];
+    }
+
+    function getRandomResponse(mood) {
+      // for procrastinating, sometimes prefer polite roast
+      if (mood === "procrastinating") {
+        // 60% chance roast, 40% humor
+        const useRoast = Math.random() < 0.6;
+        if (useRoast) {
+          const r = getRandomFrom(roastMessages, mood);
+          if (r) return r;
+        }
+      }
+      // fallback to humor list
+      return getRandomFrom(humorMessages, mood);
+    }
+
+    function handleUserMessage(text) {
+      if (isRisky(text)) {
+        const s = getSupportMessage();
+        addMessage(s.text + " Action: " + s.action, true);
+        return;
+      }
+
+      const m = getRandomResponse(currentMood);
+      if (m) {
+        addMessage(m.text + " Try this: " + m.action, true);
+      } else {
+        addMessage("I ran out of lines, but you haven’t run out of chances. Study a little, then rest.", true);
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const text = userInput.value.trim();
+      if (!text) return;
+      addMessage(text, false);
+      handleUserMessage(text);
+      userInput.value = '';
+    });
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendBtn.click();
+      }
+    });
+
+    moodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        moodButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMood = btn.dataset.mood;
+        addMessage(`Mood changed to "${currentMood}". Tell me what’s going on.`, true);
+      });
+    });
+
+    // initial greeting
+    addMessage("Hi! I’m your Exam Stress Humor Bot. Choose a mood and type how you feel. I’ll reply with jokes, polite roasts, and small study nudges.", true);
+  </script>
+</body>
+</html> -->
+<!-- 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Exam Roast Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f4ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      width: 380px;
+      background: white;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #4f46e5;
+      color: white;
+      padding: 10px 16px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .header small {
+      opacity: 0.9;
+      font-size: 11px;
+    }
+    .moods {
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid #eee;
+    }
+    .mood-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 20px;
+      border: 1px solid #4f46e5;
+      background: white;
+      cursor: pointer;
+    }
+    .mood-btn.active {
+      background: #4f46e5;
+      color: white;
+    }
+    .chat {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f9fafb;
+      display: flex;
+      flex-direction: column;
+    }
+    .msg {
+      margin: 6px 0;
+      max-width: 80%;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .bot {
+      background: #e5e7eb;
+      align-self: flex-start;
+    }
+    .user {
+      background: #4f46e5;
+      color: white;
+      align-self: flex-end;
+    }
+    .input-area {
+      display: flex;
+      padding: 8px;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+    .input-area input {
+      flex: 1;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .input-area button {
+      margin-left: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Exam Roast Bot</h2>
+      <small>Polite insults about your study habits</small>
+    </div>
+
+    <div class="moods">
+      <button class="mood-btn active" data-mood="stressed">Stressed</button>
+      <button class="mood-btn" data-mood="sleepy">Sleepy</button>
+      <button class="mood-btn" data-mood="procrastinating">Procrastinating</button>
+      <button class="mood-btn" data-mood="ok">Feeling okay</button>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type anything, get roasted..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const moodButtons = document.querySelectorAll('.mood-btn');
+
+    let currentMood = 'stressed';
+
+    // If these appear, bot stops roasting and becomes serious
+    const riskyKeywords = ["give up", "end it", "hate my life", "suicide", "die"];
+
+    // Main roast list – all polite, behavior‑based
+    const roastMessages = [
+      // STRESSED
+      {
+        moodTags: ["stressed"],
+        text: "You’re acting like the exam is a horror movie, but half the ghosts are just definitions.",
+        action: "At least read one definition so the ghosts have names."
+      },
+      {
+        moodTags: ["stressed"],
+        text: "You look like you’ve revised every possible panic scenario except the syllabus.",
+        action: "Glance at a single page instead of replaying disasters in your head."
+      },
+      {
+        moodTags: ["stressed"],
+        text: "If overthinking was a subject, you’d top the class without studying.",
+        action: "Use that brain power to read two lines of your notes, maybe?"
+      },
+
+      // SLEEPY
+      {
+        moodTags: ["sleepy"],
+        text: "You’re not revising; you’re doing advanced eyelid inspection.",
+        action: "Let your eyes look at one paragraph before they close again."
+      },
+      {
+        moodTags: ["sleepy"],
+        text: "Your brain is on airplane mode, but you’re still expecting full marks.",
+        action: "Switch it to normal mode by reading at least one small concept."
+      },
+      {
+        moodTags: ["sleepy"],
+        text: "You’re one yawn away from forgetting why you opened the book.",
+        action: "Find one heading and pretend to care about it for a minute."
+      },
+
+      // PROCRASTINATING
+      {
+        moodTags: ["procrastinating"],
+        text: "Your bond with your phone is strong; your bond with your notes is… buffering.",
+        action: "Pause the buffer long enough to open the book once."
+      },
+      {
+        moodTags: ["procrastinating"],
+        text: "You and your syllabus have a long‑distance relationship: you only meet the night before exams.",
+        action: "Maybe send it a message now by reading a single page."
+      },
+      {
+        moodTags: ["procrastinating"],
+        text: "The way you postpone studying could be taught as an advanced delay technique.",
+        action: "Delay your scrolling instead and stare at one formula."
+      },
+      {
+        moodTags: ["procrastinating"],
+        text: "Your to‑do list has seen more carry‑forwards than your answer sheets.",
+        action: "Let one small topic graduate from ‘pending’ to ‘kind of done’."
+      },
+
+      // OK / CHILL
+      {
+        moodTags: ["ok"],
+        text: "You’re taking this exam so casually, the questions might feel offended.",
+        action: "Solve at least one question so they don’t feel ignored."
+      },
+      {
+        moodTags: ["ok"],
+        text: "You’re treating the exam like a side quest, but it thinks it’s the final boss.",
+        action: "Give it one tiny hit by revising a short topic."
+      },
+      {
+        moodTags: ["ok"],
+        text: "Confidence is good, but your notes are still wondering who you are.",
+        action: "Visit them briefly so they remember your face."
+      }
+    ];
+
+    function addMessage(text, fromBot = true) {
+      const div = document.createElement('div');
+      div.classList.add('msg');
+      div.classList.add(fromBot ? 'bot' : 'user');
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function getSupportMessage() {
+      return {
+        text: "This sounds serious. Exams are temporary; your life and health matter much more.",
+        action: "Please talk to a trusted friend, family member, teacher, or counselor as soon as you can."
+      };
+    }
+
+    function isRisky(text) {
+      const lower = text.toLowerCase();
+      return riskyKeywords.some(k => lower.includes(k));
+    }
+
+    function getRandomRoast(mood) {
+      const filtered = roastMessages.filter(m => m.moodTags.includes(mood));
+      if (filtered.length === 0) return null;
+      const index = Math.floor(Math.random() * filtered.length);
+      return filtered[index];
+    }
+
+    function handleUserMessage(text) {
+      if (isRisky(text)) {
+        const s = getSupportMessage();
+        addMessage(s.text + " Action: " + s.action, true);
+        return;
+      }
+
+      const r = getRandomRoast(currentMood) || getRandomRoast("stressed");
+      if (r) {
+        // Action is written like part of the insult, not serious advice
+        addMessage(r.text + " " + r.action, true);
+      } else {
+        addMessage("I ran out of roasts, but your excuses are still in stock.", true);
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const text = userInput.value.trim();
+      if (!text) return;
+      addMessage(text, false);
+      handleUserMessage(text);
+      userInput.value = '';
+    });
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendBtn.click();
+      }
+    });
+
+    moodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        moodButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMood = btn.dataset.mood;
+        addMessage(`Mood set to "${currentMood}". Ready for a fresh roast.`, true);
+      });
+    });
+
+    // Initial greeting
+    addMessage("Hi! I’m your Exam Roast Bot. Choose a mood and type anything. I’ll politely bully your study habits.", true);
+  </script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Exam Roast Bot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f4ff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      width: 380px;
+      background: white;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: #4f46e5;
+      color: white;
+      padding: 10px 16px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .header small {
+      opacity: 0.9;
+      font-size: 11px;
+    }
+    .moods {
+      padding: 8px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      border-bottom: 1px solid #eee;
+    }
+    .mood-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      border-radius: 20px;
+      border: 1px solid #4f46e5;
+      background: white;
+      cursor: pointer;
+    }
+    .mood-btn.active {
+      background: #4f46e5;
+      color: white;
+    }
+    .chat {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: #f9fafb;
+      display: flex;
+      flex-direction: column;
+    }
+    .msg {
+      margin: 6px 0;
+      max-width: 80%;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.3;
+    }
+    .bot {
+      background: #e5e7eb;
+      align-self: flex-start;
+    }
+    .user {
+      background: #4f46e5;
+      color: white;
+      align-self: flex-end;
+    }
+    .input-area {
+      display: flex;
+      padding: 8px;
+      border-top: 1px solid #eee;
+      background: white;
+    }
+    .input-area input {
+      flex: 1;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .input-area button {
+      margin-left: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: none;
+      background: #4f46e5;
+      color: white;
+      cursor: pointer;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h2>Exam Roast Bot</h2>
+      <small>Polite insults about your study habits</small>
+    </div>
+
+    <div class="moods">
+      <button class="mood-btn active" data-mood="stressed">Stressed</button>
+      <button class="mood-btn" data-mood="sleepy">Sleepy</button>
+      <button class="mood-btn" data-mood="procrastinating">Procrastinating</button>
+      <button class="mood-btn" data-mood="ok">Feeling okay</button>
+    </div>
+
+    <div class="chat" id="chat"></div>
+
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Type anything, get roasted..." />
+      <button id="sendBtn">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const chat = document.getElementById('chat');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const moodButtons = document.querySelectorAll('.mood-btn');
+
+    let currentMood = 'stressed';
+
+    // If these words appear, bot becomes serious
+    const riskyKeywords = ["give up", "end it", "hate my life", "suicide", "die"];
+
+    // Polite roast lines – only about study behavior
+    const roastMessages = [
+      // STRESSED
+      {
+        moodTags: ["stressed"],
+        text: "You’re acting like the exam is a horror movie, but half the ghosts are just definitions.",
+        action: "At least read one definition so the ghosts have names."
+      },
+      {
+        moodTags: ["stressed"],
+        text: "You look like you’ve revised every possible panic scenario except the syllabus.",
+        action: "Maybe glance at a single page instead of rewatching disasters in your head."
+      },
+      {
+        moodTags: ["stressed"],
+        text: "If overthinking was a subject, you’d top the class without opening a book.",
+        action: "Use 1% of that energy to read two lines, maybe."
+      },
+
+      // SLEEPY
+      {
+        moodTags: ["sleepy"],
+        text: "You’re not revising; you’re doing advanced eyelid inspection.",
+        action: "Let your eyes look at one paragraph before they close again."
+      },
+      {
+        moodTags: ["sleepy"],
+        text: "Your brain is on airplane mode, but you still expect full marks.",
+        action: "Turn it to normal by reading at least one small concept."
+      },
+      {
+        moodTags: ["sleepy"],
+        text: "You’re one yawn away from forgetting why you opened the book.",
+        action: "Find one heading and pretend to care about it for a minute."
+      },
+
+      // PROCRASTINATING
+      {
+        moodTags: ["procrastinating"],
+        text: "Your bond with your phone is strong; your bond with your notes is still loading.",
+        action: "Pause the phone long enough to open the book once."
+      },
+      {
+        moodTags: ["procrastinating"],
+        text: "You and your syllabus have a long‑distance relationship: you only meet the night before exams.",
+        action: "Maybe send it a message now by reading a single page."
+      },
+      {
+        moodTags: ["procrastinating"],
+        text: "The way you postpone studying could be taught as a masterclass in delay.",
+        action: "Delay your scrolling instead and stare at one formula."
+      },
+      {
+        moodTags: ["procrastinating"],
+        text: "Your to‑do list has more carry‑forwards than your answer sheet.",
+        action: "Let one tiny topic graduate from ‘pending’ to ‘kind of done’."
+      },
+
+      // OK / CHILL
+      {
+        moodTags: ["ok"],
+        text: "You’re taking this exam so casually, the questions might feel ignored.",
+        action: "Solve at least one so they feel seen."
+      },
+      {
+        moodTags: ["ok"],
+        text: "You’re treating the exam like a side quest, but it thinks it’s the final boss.",
+        action: "Give it one tiny hit by revising a short topic."
+      },
+      {
+        moodTags: ["ok"],
+        text: "Confidence is good, but your notes are still wondering who you are.",
+        action: "Visit them briefly so they remember your face."
+      }
+    ];
+
+    function addMessage(text, fromBot = true) {
+      const div = document.createElement('div');
+      div.classList.add('msg');
+      div.classList.add(fromBot ? 'bot' : 'user');
+      div.textContent = text;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function getSupportMessage() {
+      return {
+        text: "This sounds serious. Exams are temporary; your life and health matter much more.",
+        action: "Please talk to a trusted friend, family member, teacher, or counselor as soon as you can."
+      };
+    }
+
+    function isRisky(text) {
+      const lower = text.toLowerCase();
+      return riskyKeywords.some(k => lower.includes(k));
+    }
+
+    function getRandomRoast(mood) {
+      const filtered = roastMessages.filter(m => m.moodTags.includes(mood));
+      if (filtered.length === 0) return null;
+      const index = Math.floor(Math.random() * filtered.length);
+      return filtered[index];
+    }
+
+    function handleUserMessage(text) {
+      if (isRisky(text)) {
+        const s = getSupportMessage();
+        addMessage(s.text + " " + s.action, true);
+        return;
+      }
+
+      const r = getRandomRoast(currentMood) || getRandomRoast("stressed");
+      if (r) {
+        addMessage(r.text + " " + r.action, true);
+      } else {
+        addMessage("I ran out of roasts, but your excuses are still unlimited.", true);
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      const text = userInput.value.trim();
+      if (!text) return;
+      addMessage(text, false);
+      handleUserMessage(text);
+      userInput.value = '';
+    });
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        sendBtn.click();
+      }
+    });
+
+    moodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        moodButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentMood = btn.dataset.mood;
+        addMessage(`Mood set to "${currentMood}". Ready for a new roast.`, true);
+      });
+    });
+
+    // First message
+    addMessage("Hi! I’m your Exam Roast Bot. Choose a mood and type anything. I’ll politely insult your exam habits.", true);
+  </script>
+</body>
+</html>
