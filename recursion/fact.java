@@ -1,0 +1,13 @@
+import java.util.*;
+class Fact{
+    public static int  f(int n){
+        if(n==0){
+            return 1;
+        }
+        return n*f(n-1);
+    }
+    public static void main(String[] args){
+        Scanner sc=new Scanner(System.in);
+        System.out.print(f(5));
+    }
+}
