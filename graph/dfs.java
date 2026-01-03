@@ -12,7 +12,20 @@ class Listrepresentation{
             m.get(u).add(v);
             m.get(v).add(u);
         }
+        boolean[] vis=new boolean[6];
+        for(int i=0;i<6;i++)
+        vis[i]=false;
         System.out.print(m);
-        System.out.print(m.get(3));
+        dfs(0,vis);
     }
+    static void dfs(int start,boolean[] vis){
+        vis[start]=true;
+        System.out.println(start);
+        for(int i:m.get(start)){
+            if(vis[i]==false){
+                dfs(i,vis);
+            }
+        }
+    }
+
 }
